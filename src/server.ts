@@ -1,9 +1,10 @@
 import fastify from 'fastify'
+import { userRoutes } from './routes/user'
 
 const app = fastify()
 
-app.get('/hello', () => {
-  return 'hello world'
+app.register(userRoutes, {
+  prefix: 'user',
 })
 
 app
