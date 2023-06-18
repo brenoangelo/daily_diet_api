@@ -22,4 +22,44 @@ export async function usersRoutes(app: FastifyInstance) {
 
     return reply.status(201).send()
   })
+
+  app.post('/login', async (request, reply) => {
+    const getUsersParamsSchema = z.object({
+      email: z.string(),
+      password: z.string(),
+    })
+
+    const { email, password } = getUsersParamsSchema.parse(request.body)
+
+    try {
+      const user = await knex('users').where('email', email).first()
+
+      const isPasswordCorreclty = user?.password === password
+
+      if (!isPasswordCorreclty) {
+        throw new Error('Invalid password')
+      }
+
+      let sessionId = request.cookies.sessionId
+
+      if (!sessionId) {
+        sessionId = randomUUID()
+
+        reply.cookie('sessionId', sessionId, {
+          path: '/',
+          maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        })
+
+        await knex('users').where('id', user.id).update({
+          sessionId,
+        })
+      }
+
+      return reply.status(200).send()
+    } catch (error) {
+      console.error('Has error')
+
+      return reply.status(401).send()
+    }
+  })
 }
